@@ -25,6 +25,7 @@ app.use('/api', require('./src/Routes/friesRoutes'));
 app.use('/api', require('./src/Routes/drinkRoutes'));
 app.use('/api', require('./src/Routes/discountRoutes'));
 app.use('/api', require('./src/Routes/menuRoutes'));
+app.use('/api', require('./src/Routes/supportRoutes'));
 
 app.use((err, req, res, next) => {
     console.error('Error no manejado:', err);
