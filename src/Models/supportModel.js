@@ -7,10 +7,10 @@ exports.createSupport = async (supportData) => {
             userId: supportData.userId,
             consulta: supportData.consulta,
             email: supportData.email,
-            fechaCreacion: new Date()
+            fecha: new Date()
         });
 
-        return { id: docRef.id, ...supportData, fechaCreacion: new Date() };
+        return { id: docRef.id, ...supportData, fecha: new Date() };
     } catch (error) {
         console.error("Error al crear soporte:", error);
         throw new Error(`Error al crear el soporte: ${error.message}`);
@@ -24,7 +24,13 @@ exports.getAllSupport = async () => {
         
         const supports = [];
         for (const doc of snapshot.docs) {
-            supports.push({ id: doc.id, ...doc.data() });
+            const supportData = doc.data();
+            supports.push({ 
+                id: doc.id, 
+                ...supportData, 
+                fecha: supportData.fecha ? supportData.fecha.toDate() : null, 
+                fechaRespuesta: supportData.fechaRespuesta ? supportData.fechaRespuesta.toDate() : null 
+            });
         }
         
         return supports;
@@ -38,12 +44,18 @@ exports.getSupportById = async (id) => {
     try {
         const docRef = doc(db, "support", id);
         const supportDoc = await getDoc(docRef);
-        
+
         if (!supportDoc.exists()) {
             return null;
         }
-        
-        return { id: supportDoc.id, ...supportDoc.data() };
+
+        const supportData = supportDoc.data();
+        return { 
+            id: supportDoc.id, 
+            ...supportData, 
+            fecha: supportData.fecha ? supportData.fecha.toDate() : null, 
+            fechaRespuesta: supportData.fechaRespuesta ? supportData.fechaRespuesta.toDate() : null 
+        };
     } catch (error) {
         console.error("Error en getSupportById:", error);
         throw new Error(`Error al obtener el soporte: ${error.message}`);

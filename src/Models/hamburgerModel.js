@@ -70,6 +70,7 @@ exports.getAllHamburgers = async () => {
 
 exports.getHamburgerById = async (id) => {
     try {
+        
         const docRef = doc(db, "hamburger", id);
         const hamburgerDoc = await getDoc(docRef);
         
