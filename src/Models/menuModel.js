@@ -1,17 +1,36 @@
 const { collection, addDoc, getDocs, doc, getDoc } = require("firebase/firestore");
 const db = require("../../config");
+const { getHamburgerById } = require("./hamburgerModel");
+const { getFriesById } = require("./friesModel");
+const { getDrinkById } = require("./drinkModel");
+const { getDiscountById } = require("./discountModel");
 
 exports.createMenu = async (menuData) => {
     try {
+        const hamburger = await getHamburgerById(menuData.hamburger);
+        const fries = await getFriesById(menuData.fries);
+        const drink = await getDrinkById(menuData.drink);
+
+        const totalPrice = hamburger.finalPrice + fries.finalPrice + drink.finalPrice;
+        let discountedPrice = totalPrice;
+
+        if (menuData.isDiscounted && menuData.discount) {
+            const discount = await getDiscountById(menuData.discount);
+            if (discount && discount.isActive) {
+                discountedPrice = totalPrice * (1 - (discount.porcent / 100));
+            }
+        }
+
         const docRef = await addDoc(collection(db, "menu"), {
+            hamburger: hamburger.id,
+            fries: fries.id,
+            drink: drink.id,
+            isDiscounted: menuData.isDiscounted,
             discount: menuData.discount,
-            drink: menuData.drink,
-            fries: menuData.fries,
-            hamburger: menuData.hamburger,
-            isDiscounted: menuData.isDiscounted || false,
-            price: menuData.price
+            price: discountedPrice
         });
-        return { id: docRef.id, ...menuData };
+
+        return { id: docRef.id, ...menuData, totalPrice, discountedPrice };
     } catch (error) {
         console.error("Error al crear menú:", error);
         throw new Error(`Error al crear el menú: ${error.message}`);
@@ -27,18 +46,31 @@ exports.getAllMenus = async () => {
         console.log("Snapshot obtenido:", snapshot.size, "documentos encontrados");
         
         const menus = [];
-        snapshot.forEach((doc) => {
+        for (const doc of snapshot.docs) {
             const menuData = doc.data();
+            const hamburger = await getHamburgerById(menuData.hamburger);
+            const fries = await getFriesById(menuData.fries);
+            const drink = await getDrinkById(menuData.drink);
+
+            let discountedPrice = hamburger.price + fries.price + drink.price;
+            if (menuData.isDiscounted && menuData.discount) {
+                const discount = await getDiscountById(menuData.discount);
+                if (discount && discount.isActive) {
+                    discountedPrice = discountedPrice * (1 - (discount.porcent / 100));
+                }
+            }
+
             menus.push({
                 id: doc.id,
-                discount: menuData.discount,
-                drink: menuData.drink,
-                fries: menuData.fries,
-                hamburger: menuData.hamburger,
+                hamburger: hamburger,
+                fries: fries,
+                drink: drink,
                 isDiscounted: menuData.isDiscounted,
-                price: menuData.price
+                discount: menuData.discount,
+                totalPrice: hamburger.price + fries.price + drink.price,
+                discountedPrice: discountedPrice
             });
-        });
+        }
         
         return menus;
     } catch (error) {
@@ -56,7 +88,29 @@ exports.getMenuById = async (id) => {
             return null;
         }
         
-        return { id: menuDoc.id, ...menuDoc.data() };
+        const menuData = menuDoc.data();
+        const hamburger = await getHamburgerById(menuData.hamburger);
+        const fries = await getFriesById(menuData.fries);
+        const drink = await getDrinkById(menuData.drink);
+
+        let discountedPrice = hamburger.price + fries.price + drink.price;
+        if (menuData.isDiscounted && menuData.discount) {
+            const discount = await getDiscountById(menuData.discount);
+            if (discount && discount.isActive) {
+                discountedPrice = discountedPrice * (1 - (discount.porcent / 100));
+            }
+        }
+
+        return {
+            id: menuDoc.id,
+            hamburger: hamburger,
+            fries: fries,
+            drink: drink,
+            isDiscounted: menuData.isDiscounted,
+            discount: menuData.discount,
+            totalPrice: hamburger.price + fries.price + drink.price,
+            discountedPrice: discountedPrice
+        };
     } catch (error) {
         console.error("Error en getMenuById:", error);
         throw new Error(`Error al obtener el menú: ${error.message}`);
