@@ -55,12 +55,12 @@ exports.getData = async (req, res) => {
 
 exports.edit = async (req, res) => {
     const { id } = req.params;
-    const { name, email, phoneNumber, address } = req.body;
+    const { name, phoneNumber, address } = req.body;
 
-    if (!name || !email) {
+    if (!name) {
         return res.status(400).json({ 
             success: false, 
-            message: 'El nombre y email son campos requeridos' 
+            message: 'El nombre es un campo requerido' 
         });
     }
 
@@ -75,10 +75,40 @@ exports.edit = async (req, res) => {
 
         const updatedUser = await userModel.updateUser(id, {
             name,
-            email,
             phoneNumber,
             address
         });
+
+        res.json({ 
+            success: true, 
+            message: 'Usuario actualizado correctamente',
+            user: updatedUser 
+        });
+
+    } catch (error) {
+        console.error("Error completo en edit:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al actualizar el usuario',
+            error: error.message 
+        });
+    }
+};
+
+exports.changeRol = async (req, res) => {
+    const { id } = req.params;
+    const { isAdmin_val } = req.body;
+
+    try {
+        const existingUser = await userModel.getUserById(id);
+        if (!existingUser) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Usuario no encontrado' 
+            });
+        }
+
+        const updatedUser = await userModel.changeRol(id,isAdmin_val);
 
         res.json({ 
             success: true, 

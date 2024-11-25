@@ -3,7 +3,6 @@ const db = require("../../config");
 
 exports.register = async (id, name, email, password) => {
     try {
-        
         const userCollection = collection(db, "USER");
         
         const docRef = doc(userCollection, id);
@@ -75,9 +74,25 @@ exports.updateUser = async (id, userData) => {
         
         await updateDoc(userRef, {
             name: userData.name,
-            email: userData.email,
             phoneNumber: userData.phoneNumber || "",
             address: userData.address || ""
+        });
+
+        const updatedDoc = await getDoc(userRef);
+        return { id: updatedDoc.id, ...updatedDoc.data() };
+        
+    } catch (error) {
+        console.error("Error en updateUser:", error);
+        throw new Error(`Error al actualizar el usuario: ${error.message}`);
+    }
+};
+
+exports.changeRol = async (id,isAdmin_val) => {
+    try {
+        const userRef = doc(db, "USER", id);
+        
+        await updateDoc(userRef, {
+            isAdmin: isAdmin_val
         });
 
         const updatedDoc = await getDoc(userRef);
