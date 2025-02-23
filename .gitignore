@@ -10,7 +10,6 @@ yarn-error.log
 
 # Credentials
 serviceAccountKey.json
-*serviceAccountKey*.json
 
 .idea/
 .vscode/
